@@ -534,48 +534,68 @@ void main() {
     );
   });
 
-  test('crash', () async {
-    final mockStackTrace = MockStackTrace();
-    await Embrace.crash("", mockStackTrace, context: "");
-    expect(
-      calls,
-      <Matcher>[isMethodCall('crash', arguments: {
-        'exception': '',
-        'context': '',
-        'information': '',
-        'stackTraceElements': const [],
-      })],
-    );
-  });
+  group("Crash", () {
+    var stacktraceLines = [
+      '#0      debugWidgetBuilderValue.<anonymous closure> (package:flutter/src/widgets/debug.dart:272:7)',
+      '#1      debugWidgetBuilderValue (package:flutter/src/widgets/debug.dart:293:4)',
+      '#2      _rootRun (dart:async/zone.dart:1126:13)',
+    ];
+    final stackTraceString = stacktraceLines.join('\n');
+    final stackTrace = StackTrace.fromString(stackTraceString);
+    final exception = "something bad happened";
+    final context = "something went wrong";
 
-  test('throwError', () async {
-    expect(() => Embrace.throwError(), throwsA(isInstanceOf<StateError>()));
-  });
+    test('crash', () async {
+      await Embrace.crash(exception, stackTrace, context: context);
+      expect(
+        calls,
+        <Matcher>[
+          isMethodCall('crash', arguments: {
+            'exception': exception,
+            'context': context,
+            'information': '',
+            'stackTraceElements': stacktraceLines,
+          })
+        ],
+      );
+    });
 
-  test('crashError', () async {
-    await Embrace.crashError(StateError('Error thrown by Embrace plugin'));
-    expect(
-      calls,
-      <Matcher>[isMethodCall('crash', arguments: {
-        'exception': 'Bad state: Error thrown by Embrace plugin',
-        'context': 'null',
-        'information': '',
-        'stackTraceElements': const [],
-      })],
-    );
-  });
+    test('throwError', () async {
+      expect(() => Embrace.throwError(), throwsA(isInstanceOf<StateError>()));
+    });
 
-  test('crashFlutter', () async {
-    await Embrace.crashFlutter(FlutterErrorDetails(exception: StateError('FlutterError thrown by Embrace plugin')));
-    expect(
-      calls,
-      <Matcher>[isMethodCall('crash', arguments: {
-        'exception': 'Bad state: FlutterError thrown by Embrace plugin',
-        'context': 'null',
-        'information': '',
-        'stackTraceElements': const [],
-      })],
-    );
+    test('crashError', () async {
+      var errorMsg = 'Error thrown by Embrace plugin';
+      await Embrace.crashError(StateError(errorMsg));
+      expect(
+        calls,
+        <Matcher>[
+          isMethodCall('crash', arguments: {
+            'exception': 'Bad state: ' + errorMsg,
+            'context': null,
+            'information': '',
+            'stackTraceElements': [],
+          })
+        ],
+      );
+    });
+
+    test('crashFlutter', () async {
+      var errorMsg = 'FlutterError thrown by Embrace plugin';
+      await Embrace.crashFlutter(FlutterErrorDetails(
+          exception: StateError(errorMsg)));
+      expect(
+        calls,
+        <Matcher>[
+          isMethodCall('crash', arguments: {
+            'exception': 'Bad state: ' + errorMsg,
+            'context': null,
+            'information': '',
+            'stackTraceElements': [],
+          })
+        ],
+      );
+    });
   });
 
   test('initialize', () async {
