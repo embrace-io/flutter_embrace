@@ -11,6 +11,10 @@ import 'package:http/testing.dart';
 import 'package:mockito/mockito.dart';
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
+  final String logMessage = "a message";
+  final String deviceId = "0123456789ABCDEF0123456789ABCDEF";
   const MethodChannel channel = MethodChannel('flutter_embrace');
   final List<MethodCall> calls = <MethodCall>[];
 
@@ -20,21 +24,21 @@ void main() {
       switch (methodCall.method) {
         case 'isStarted':
           return false;
+        case 'getDeviceId':
+          return deviceId;
         case 'start:':
           return null;
         case 'setUserIdentifier':
           return null;
+        case 'clearUserIdentifier':
+          return null;
         case 'setUsername':
+          return null;
+        case 'clearUsername':
           return null;
         case 'setUserEmail':
           return null;
-        case 'logInfo':
-          return null;
-        case 'logWarning':
-          return null;
-        case 'logError':
-          return null;
-        case 'logBreadcrumb':
+        case 'clearUserEmail':
           return null;
         case 'setUserAsPayer':
           return null;
@@ -46,13 +50,23 @@ void main() {
           return null;
         case 'clearUserPersona':
           return null;
-        case 'endAppStartup':
+        case 'startEvent':
+          return null;
+        case 'endEvent':
           return null;
         case 'startAppStartup':
           return null;
-        case 'endSession':
+        case 'endAppStartup':
           return null;
-        case 'clearUserIdentifier':
+        case 'logInfo':
+          return null;
+        case 'logWarning':
+          return null;
+        case 'logError':
+          return null;
+        case 'logBreadcrumb':
+          return null;
+        case 'endSession':
           return null;
         case 'logNetworkCall':
           return null;
@@ -72,7 +86,6 @@ void main() {
           return null;
       }
     });
-
   });
 
   tearDown(() {
@@ -92,6 +105,14 @@ void main() {
     );
   });
 
+  test('getDeviceId', () async {
+    expect(await Embrace.getDeviceId, deviceId);
+    expect(
+      calls,
+      <Matcher>[isMethodCall('getDeviceId', arguments: null)],
+    );
+  });
+
   test('start', () async {
     await Embrace.start();
     expect(
@@ -100,90 +121,387 @@ void main() {
     );
   });
 
-  test('setUserIdentifier', () async {
-    await Embrace.setUserIdentifier("");
-    expect(
-      calls,
-      <Matcher>[isMethodCall('setUserIdentifier', arguments: "")],
-    );
+  group('User Info', () {
+    test('setUserIdentifier', () async {
+      await Embrace.setUserIdentifier("");
+      expect(
+        calls,
+        <Matcher>[isMethodCall('setUserIdentifier', arguments: "")],
+      );
+    });
+
+    test('clearUserIdentifier', () async {
+      await Embrace.clearUserIdentifier();
+      expect(
+        calls,
+        <Matcher>[isMethodCall('clearUserIdentifier', arguments: null)],
+      );
+    });
+
+    test('setUsername', () async {
+      String userName = "aUser";
+      await Embrace.setUsername(userName);
+      expect(
+        calls,
+        <Matcher>[isMethodCall('setUsername', arguments: userName)],
+      );
+    });
+
+    test('clearUsername', () async {
+      await Embrace.clearUsername();
+      expect(
+        calls,
+        <Matcher>[isMethodCall('clearUsername', arguments: null)],
+      );
+    });
+
+    test('setUserEmail', () async {
+      String email = "a@b.c";
+      await Embrace.setUserEmail(email);
+      expect(
+        calls,
+        <Matcher>[isMethodCall('setUserEmail', arguments: email)],
+      );
+    });
+
+    test('clearUserEmail', () async {
+      await Embrace.clearUserEmail();
+      expect(
+        calls,
+        <Matcher>[isMethodCall('clearUserEmail', arguments: null)],
+      );
+    });
+
+    test('setUserAsPayer', () async {
+      await Embrace.setUserAsPayer();
+      expect(
+        calls,
+        <Matcher>[isMethodCall('setUserAsPayer', arguments: null)],
+      );
+    });
+
+    test('clearUserAsPayer', () async {
+      await Embrace.clearUserAsPayer();
+      expect(
+        calls,
+        <Matcher>[isMethodCall('clearUserAsPayer', arguments: null)],
+      );
+    });
+
+    test('clearAllUserPersonas', () async {
+      await Embrace.clearAllUserPersonas();
+      expect(
+        calls,
+        <Matcher>[isMethodCall('clearAllUserPersonas', arguments: null)],
+      );
+    });
+
+    test('setUserPersona', () async {
+      await Embrace.setUserPersona("");
+      expect(
+        calls,
+        <Matcher>[isMethodCall('setUserPersona', arguments: "")],
+      );
+    });
+
+    test('clearUserPersona', () async {
+      await Embrace.clearUserPersona("");
+      expect(
+        calls,
+        <Matcher>[isMethodCall('clearUserPersona', arguments: "")],
+      );
+    });
   });
-  test('setUsername', () async {
-    await Embrace.setUsername("");
-    expect(
-      calls,
-      <Matcher>[isMethodCall('setUsername', arguments: "")],
-    );
+
+  group('Events', () {
+    String name = "an event";
+    String identifier = "an identifier";
+    var properties = {"k1": "v1", "k2": "v2"};
+
+    test('startEvent', () async {
+      await Embrace.startEvent(name,
+          identifier: identifier,
+          allowScreenshot: true,
+          properties: properties);
+      expect(
+        calls,
+        <Matcher>[
+          isMethodCall('startEvent', arguments: {
+            "name": name,
+            "identifier": identifier,
+            "allowScreenshot": true,
+            "properties": properties,
+          })
+        ],
+      );
+    });
+
+    test('startEventDefaults', () async {
+      await Embrace.startEvent(name);
+      expect(
+        calls,
+        <Matcher>[
+          isMethodCall('startEvent', arguments: {
+            "name": name,
+            "identifier": null,
+            "allowScreenshot": false,
+            "properties": null,
+          })
+        ],
+      );
+    });
+
+    test('endEvent', () async {
+      await Embrace.endEvent(name,
+          identifier: identifier, properties: properties);
+      expect(
+        calls,
+        <Matcher>[
+          isMethodCall('endEvent', arguments: {
+            "name": name,
+            "identifier": identifier,
+            "properties": properties,
+          })
+        ],
+      );
+    });
+
+    test('endEventDefaults', () async {
+      await Embrace.endEvent(name);
+      expect(
+        calls,
+        <Matcher>[
+          isMethodCall('endEvent', arguments: {
+            "name": name,
+            "identifier": null,
+            "properties": null,
+          })
+        ],
+      );
+    });
   });
-  test('setUserEmail', () async {
-    await Embrace.setUserEmail("");
-    expect(
-      calls,
-      <Matcher>[isMethodCall('setUserEmail', arguments: "")],
-    );
+
+  group('Logs', () {
+    test('logInfo', () async {
+      await Embrace.logInfo(logMessage);
+      expect(
+        calls,
+        <Matcher>[
+          isMethodCall('logInfo',
+              arguments: {"message": logMessage, "properties": null})
+        ],
+      );
+    });
+
+    test('logWarning', () async {
+      await Embrace.logWarning(logMessage);
+      expect(
+        calls,
+        <Matcher>[
+          isMethodCall('logWarning',
+              arguments: {"message": logMessage, "properties": null})
+        ],
+      );
+    });
+
+    test('logError', () async {
+      await Embrace.logError(logMessage);
+      expect(
+        calls,
+        <Matcher>[
+          isMethodCall('logError', arguments: {
+            "message": logMessage,
+            "allowScreenshot": false,
+            "properties": null
+          })
+        ],
+      );
+    });
+
+    test('logBreadcrumb', () async {
+      await Embrace.logBreadcrumb("");
+      expect(
+        calls,
+        <Matcher>[isMethodCall('logBreadcrumb', arguments: "")],
+      );
+    });
+
+    test('logNetworkIoRequest', () async {
+      final startTime = DateTime.now();
+      final endTime = DateTime.now();
+      final mockRequest = MockHttpClientRequest();
+      final mockResponse = MockHttpClientResponse();
+      when<dynamic>(mockRequest.done).thenAnswer((_) async => mockResponse);
+      when<Uri>(mockRequest.uri)
+          .thenAnswer((_) => Uri.parse("https://example.com/"));
+      when<String>(mockRequest.method).thenAnswer((_) => "GET");
+      when<int>(mockRequest.contentLength).thenAnswer((_) => 0);
+      when<int>(mockResponse.statusCode).thenAnswer((_) => 200);
+      when<int>(mockResponse.contentLength).thenAnswer((_) => 0);
+      await Embrace.logNetworkIoRequest(
+        mockRequest,
+        startTime: startTime,
+        endTime: endTime,
+      );
+      expect(
+        calls,
+        <Matcher>[
+          isMethodCall('logNetworkCall', arguments: {
+            "url": "https://example.com/",
+            "method": "GET",
+            "statusCode": 200,
+            "startTime": startTime.millisecondsSinceEpoch,
+            "endTime": endTime.millisecondsSinceEpoch,
+            "bytesSent": 0,
+            "bytesReceived": 0,
+          })
+        ],
+      );
+      mockRequest.close();
+    });
+
+    test('logNetworkIoRequestResponse', () async {
+      final startTime = DateTime.now();
+      final endTime = DateTime.now();
+      final mockRequest = MockHttpClientRequest();
+      final mockResponse = MockHttpClientResponse();
+      when<dynamic>(mockRequest.done).thenAnswer((_) async => mockResponse);
+      when<Uri>(mockRequest.uri)
+          .thenAnswer((_) => Uri.parse("https://example.com/"));
+      when<String>(mockRequest.method).thenAnswer((_) => "GET");
+      when<int>(mockRequest.contentLength).thenAnswer((_) => 0);
+      when<int>(mockResponse.statusCode).thenAnswer((_) => 200);
+      when<int>(mockResponse.contentLength).thenAnswer((_) => 0);
+      await Embrace.logNetworkIoRequestResponse(
+        mockRequest,
+        mockResponse,
+        startTime: startTime,
+        endTime: endTime,
+      );
+      expect(
+        calls,
+        <Matcher>[
+          isMethodCall('logNetworkCall', arguments: {
+            "url": "https://example.com/",
+            "method": "GET",
+            "statusCode": 200,
+            "startTime": startTime.millisecondsSinceEpoch,
+            "endTime": endTime.millisecondsSinceEpoch,
+            "bytesSent": 0,
+            "bytesReceived": 0,
+          })
+        ],
+      );
+      mockRequest.close();
+    });
+
+    test('logNetworkResponse', () async {
+      final startTime = DateTime.now();
+      final endTime = DateTime.now();
+      final mockRequest = MockBaseRequest();
+      final mockResponse = MockBaseResponse();
+      when<dynamic>(mockResponse.request).thenAnswer((_) => mockRequest);
+      when<Uri>(mockRequest.url)
+          .thenAnswer((_) => Uri.parse("https://example.com/"));
+      when<String>(mockRequest.method).thenAnswer((_) => "GET");
+      when<int>(mockRequest.contentLength).thenAnswer((_) => 0);
+      when<int>(mockResponse.statusCode).thenAnswer((_) => 200);
+      when<int>(mockResponse.contentLength).thenAnswer((_) => 0);
+      await Embrace.logNetworkResponse(
+        mockResponse,
+        startTime: startTime,
+        endTime: endTime,
+      );
+      expect(
+        calls,
+        <Matcher>[
+          isMethodCall('logNetworkCall', arguments: {
+            "url": "https://example.com/",
+            "method": "GET",
+            "statusCode": 200,
+            "startTime": startTime.millisecondsSinceEpoch,
+            "endTime": endTime.millisecondsSinceEpoch,
+            "bytesSent": 0,
+            "bytesReceived": 0,
+          })
+        ],
+      );
+    });
+
+    test('logNetworkCall', () async {
+      final startTime = DateTime.now();
+      final endTime = DateTime.now();
+      await Embrace.logNetworkCall(
+        url: "",
+        method: "",
+        statusCode: 200,
+        startTime: startTime,
+        endTime: endTime,
+      );
+      expect(
+        calls,
+        <Matcher>[
+          isMethodCall('logNetworkCall', arguments: {
+            "url": "",
+            "method": "",
+            "statusCode": 200,
+            "startTime": startTime.millisecondsSinceEpoch,
+            "endTime": endTime.millisecondsSinceEpoch,
+            "bytesSent": 0,
+            "bytesReceived": 0,
+          })
+        ],
+      );
+    });
+    test('logNetworkError', () async {
+      final startTime = DateTime.now();
+      final endTime = DateTime.now();
+      await Embrace.logNetworkError(
+        url: "",
+        method: "",
+        startTime: startTime,
+        endTime: endTime,
+      );
+      expect(
+        calls,
+        <Matcher>[
+          isMethodCall('logNetworkError', arguments: {
+            "url": "",
+            "method": "",
+            "startTime": startTime.millisecondsSinceEpoch,
+            "endTime": endTime.millisecondsSinceEpoch,
+            "errorType": "",
+            "errorMessage": "",
+          })
+        ],
+      );
+    });
+
+    test('logView', () async {
+      await Embrace.logView("");
+      expect(
+        calls,
+        <Matcher>[isMethodCall('logView', arguments: "")],
+      );
+    });
+
+    test('logWebView', () async {
+      await Embrace.logWebView("");
+      expect(
+        calls,
+        <Matcher>[isMethodCall('logWebView', arguments: "")],
+      );
+    });
+
+    test('forceLogView', () async {
+      await Embrace.forceLogView("");
+      expect(
+        calls,
+        <Matcher>[isMethodCall('forceLogView', arguments: "")],
+      );
+    });
   });
-  test('logInfo', () async {
-    await Embrace.logInfo("");
-    expect(
-      calls,
-      <Matcher>[isMethodCall('logInfo', arguments: "")],
-    );
-  });
-  test('logWarning', () async {
-    await Embrace.logWarning("");
-    expect(
-      calls,
-      <Matcher>[isMethodCall('logWarning', arguments: "")],
-    );
-  });
-  test('logError', () async {
-    await Embrace.logError("");
-    expect(
-      calls,
-      <Matcher>[isMethodCall('logError', arguments: "")],
-    );
-  });
-  test('logBreadcrumb', () async {
-    await Embrace.logBreadcrumb("");
-    expect(
-      calls,
-      <Matcher>[isMethodCall('logBreadcrumb', arguments: "")],
-    );
-  });
-  test('setUserAsPayer', () async {
-    await Embrace.setUserAsPayer();
-    expect(
-      calls,
-      <Matcher>[isMethodCall('setUserAsPayer', arguments: null)],
-    );
-  });
-  test('clearUserAsPayer', () async {
-    await Embrace.clearUserAsPayer();
-    expect(
-      calls,
-      <Matcher>[isMethodCall('clearUserAsPayer', arguments: null)],
-    );
-  });
-  test('clearAllUserPersonas', () async {
-    await Embrace.clearAllUserPersonas();
-    expect(
-      calls,
-      <Matcher>[isMethodCall('clearAllUserPersonas', arguments: null)],
-    );
-  });
-  test('setUserPersona', () async {
-    await Embrace.setUserPersona("");
-    expect(
-      calls,
-      <Matcher>[isMethodCall('setUserPersona', arguments: "")],
-    );
-  });
-  test('clearUserPersona', () async {
-    await Embrace.clearUserPersona("");
-    expect(
-      calls,
-      <Matcher>[isMethodCall('clearUserPersona', arguments: "")],
-    );
-  });
+
   test('endAppStartup', () async {
     await Embrace.endAppStartup();
     expect(
@@ -191,6 +509,7 @@ void main() {
       <Matcher>[isMethodCall('endAppStartup', arguments: null)],
     );
   });
+
   test('startAppStartup', () async {
     await Embrace.startAppStartup();
     expect(
@@ -198,6 +517,7 @@ void main() {
       <Matcher>[isMethodCall('startAppStartup', arguments: null)],
     );
   });
+
   test('endSession', () async {
     await Embrace.endSession();
     expect(
@@ -205,189 +525,7 @@ void main() {
       <Matcher>[isMethodCall('endSession', arguments: null)],
     );
   });
-  test('clearUserIdentifier', () async {
-    await Embrace.clearUserIdentifier();
-    expect(
-      calls,
-      <Matcher>[isMethodCall('clearUserIdentifier', arguments: null)],
-    );
-  });
 
-  test('logNetworkIoRequest', () async {
-    final startTime = DateTime.now();
-    final endTime = DateTime.now();
-    final mockRequest = MockHttpClientRequest();
-    final mockResponse = MockHttpClientResponse();
-    when<dynamic>(mockRequest.done)
-        .thenAnswer((_) async => mockResponse);
-    when<Uri>(mockRequest.uri)
-        .thenAnswer((_) => Uri.parse("https://example.com/"));
-    when<String>(mockRequest.method)
-        .thenAnswer((_) => "GET");
-    when<int>(mockRequest.contentLength)
-        .thenAnswer((_) => 0);
-    when<int>(mockResponse.statusCode)
-        .thenAnswer((_) => 200);
-    when<int>(mockResponse.contentLength)
-        .thenAnswer((_) => 0);
-    await Embrace.logNetworkIoRequest(
-      mockRequest,
-      startTime: startTime,
-      endTime: endTime,
-    );
-    expect(
-      calls,
-      <Matcher>[isMethodCall('logNetworkCall', arguments: {
-        "url": "https://example.com/",
-        "method": "GET",
-        "statusCode": 200,
-        "startTime": startTime.millisecondsSinceEpoch,
-        "endTime": endTime.millisecondsSinceEpoch,
-        "bytesSent": 0,
-        "bytesReceived": 0,
-      })],
-    );
-    mockRequest.close();
-  });
-  test('logNetworkIoRequestResponse', () async {
-    final startTime = DateTime.now();
-    final endTime = DateTime.now();
-    final mockRequest = MockHttpClientRequest();
-    final mockResponse = MockHttpClientResponse();
-    when<dynamic>(mockRequest.done)
-        .thenAnswer((_) async => mockResponse);
-    when<Uri>(mockRequest.uri)
-        .thenAnswer((_) => Uri.parse("https://example.com/"));
-    when<String>(mockRequest.method)
-        .thenAnswer((_) => "GET");
-    when<int>(mockRequest.contentLength)
-        .thenAnswer((_) => 0);
-    when<int>(mockResponse.statusCode)
-        .thenAnswer((_) => 200);
-    when<int>(mockResponse.contentLength)
-        .thenAnswer((_) => 0);
-    await Embrace.logNetworkIoRequestResponse(
-      mockRequest,
-      mockResponse,
-      startTime: startTime,
-      endTime: endTime,
-    );
-    expect(
-      calls,
-      <Matcher>[isMethodCall('logNetworkCall', arguments: {
-        "url": "https://example.com/",
-        "method": "GET",
-        "statusCode": 200,
-        "startTime": startTime.millisecondsSinceEpoch,
-        "endTime": endTime.millisecondsSinceEpoch,
-        "bytesSent": 0,
-        "bytesReceived": 0,
-      })],
-    );
-    mockRequest.close();
-  });
-  test('logNetworkResponse', () async {
-    final startTime = DateTime.now();
-    final endTime = DateTime.now();
-    final mockRequest = MockBaseRequest();
-    final mockResponse = MockBaseResponse();
-    when<dynamic>(mockResponse.request)
-        .thenAnswer((_) => mockRequest);
-    when<Uri>(mockRequest.url)
-        .thenAnswer((_) => Uri.parse("https://example.com/"));
-    when<String>(mockRequest.method)
-        .thenAnswer((_) => "GET");
-    when<int>(mockRequest.contentLength)
-        .thenAnswer((_) => 0);
-    when<int>(mockResponse.statusCode)
-        .thenAnswer((_) => 200);
-    when<int>(mockResponse.contentLength)
-        .thenAnswer((_) => 0);
-    await Embrace.logNetworkResponse(
-      mockResponse,
-      startTime: startTime,
-      endTime: endTime,
-    );
-    expect(
-      calls,
-      <Matcher>[isMethodCall('logNetworkCall', arguments: {
-        "url": "https://example.com/",
-        "method": "GET",
-        "statusCode": 200,
-        "startTime": startTime.millisecondsSinceEpoch,
-        "endTime": endTime.millisecondsSinceEpoch,
-        "bytesSent": 0,
-        "bytesReceived": 0,
-      })],
-    );
-  });
-  test('logNetworkCall', () async {
-    final startTime = DateTime.now();
-    final endTime = DateTime.now();
-    await Embrace.logNetworkCall(
-      url: "",
-      method: "",
-      statusCode: 200,
-      startTime: startTime,
-      endTime: endTime,
-    );
-    expect(
-      calls,
-      <Matcher>[isMethodCall('logNetworkCall', arguments: {
-        "url": "",
-        "method": "",
-        "statusCode": 200,
-        "startTime": startTime.millisecondsSinceEpoch,
-        "endTime": endTime.millisecondsSinceEpoch,
-        "bytesSent": 0,
-        "bytesReceived": 0,
-      })],
-    );
-  });
-  test('logNetworkError', () async {
-    final startTime = DateTime.now();
-    final endTime = DateTime.now();
-    await Embrace.logNetworkError(
-      url: "",
-      method: "",
-      startTime: startTime,
-      endTime: endTime,
-    );
-    expect(
-      calls,
-      <Matcher>[isMethodCall('logNetworkError', arguments: {
-        "url": "",
-        "method": "",
-        "startTime": startTime.millisecondsSinceEpoch,
-        "endTime": endTime.millisecondsSinceEpoch,
-        "errorType": "",
-        "errorMessage": "",
-      })],
-    );
-  });
-
-  test('logView', () async {
-    await Embrace.logView("");
-    expect(
-      calls,
-      <Matcher>[isMethodCall('logView', arguments: "")],
-    );
-  });
-
-  test('logWebView', () async {
-    await Embrace.logWebView("");
-    expect(
-      calls,
-      <Matcher>[isMethodCall('logWebView', arguments: "")],
-    );
-  });
-  test('forceLogView', () async {
-    await Embrace.forceLogView("");
-    expect(
-      calls,
-      <Matcher>[isMethodCall('forceLogView', arguments: "")],
-    );
-  });
   test('stop', () async {
     await Embrace.stop();
     expect(
@@ -396,48 +534,68 @@ void main() {
     );
   });
 
-  test('crash', () async {
-    final mockStackTrace = MockStackTrace();
-    await Embrace.crash("", mockStackTrace, context: "");
-    expect(
-      calls,
-      <Matcher>[isMethodCall('crash', arguments: {
-        'exception': '',
-        'context': '',
-        'information': '',
-        'stackTraceElements': const [],
-      })],
-    );
-  });
+  group("Crash", () {
+    var stacktraceLines = [
+      '#0      debugWidgetBuilderValue.<anonymous closure> (package:flutter/src/widgets/debug.dart:272:7)',
+      '#1      debugWidgetBuilderValue (package:flutter/src/widgets/debug.dart:293:4)',
+      '#2      _rootRun (dart:async/zone.dart:1126:13)',
+    ];
+    final stackTraceString = stacktraceLines.join('\n');
+    final stackTrace = StackTrace.fromString(stackTraceString);
+    final exception = "something bad happened";
+    final context = "something went wrong";
 
-  test('throwError', () async {
-    expect(() => Embrace.throwError(), throwsA(isInstanceOf<StateError>()));
-  });
+    test('crash', () async {
+      await Embrace.crash(exception, stackTrace, context: context);
+      expect(
+        calls,
+        <Matcher>[
+          isMethodCall('crash', arguments: {
+            'exception': exception,
+            'context': context,
+            'information': '',
+            'stackTraceElements': stacktraceLines,
+          })
+        ],
+      );
+    });
 
-  test('crashError', () async {
-    await Embrace.crashError(StateError('Error thrown by Embrace plugin'));
-    expect(
-      calls,
-      <Matcher>[isMethodCall('crash', arguments: {
-        'exception': 'Bad state: Error thrown by Embrace plugin',
-        'context': 'null',
-        'information': '',
-        'stackTraceElements': const [],
-      })],
-    );
-  });
+    test('throwError', () async {
+      expect(() => Embrace.throwError(), throwsA(isInstanceOf<StateError>()));
+    });
 
-  test('crashFlutter', () async {
-    await Embrace.crashFlutter(FlutterErrorDetails(exception: StateError('FlutterError thrown by Embrace plugin')));
-    expect(
-      calls,
-      <Matcher>[isMethodCall('crash', arguments: {
-        'exception': 'Bad state: FlutterError thrown by Embrace plugin',
-        'context': 'null',
-        'information': '',
-        'stackTraceElements': const [],
-      })],
-    );
+    test('crashError', () async {
+      var errorMsg = 'Error thrown by Embrace plugin';
+      await Embrace.crashError(StateError(errorMsg));
+      expect(
+        calls,
+        <Matcher>[
+          isMethodCall('crash', arguments: {
+            'exception': 'Bad state: ' + errorMsg,
+            'context': null,
+            'information': '',
+            'stackTraceElements': [],
+          })
+        ],
+      );
+    });
+
+    test('crashFlutter', () async {
+      var errorMsg = 'FlutterError thrown by Embrace plugin';
+      await Embrace.crashFlutter(FlutterErrorDetails(
+          exception: StateError(errorMsg)));
+      expect(
+        calls,
+        <Matcher>[
+          isMethodCall('crash', arguments: {
+            'exception': 'Bad state: ' + errorMsg,
+            'context': null,
+            'information': '',
+            'stackTraceElements': [],
+          })
+        ],
+      );
+    });
   });
 
   test('initialize', () async {
@@ -628,19 +786,28 @@ void main() {
 }
 
 class MockSimpleRouteObserver extends Mock implements SimpleRouteObserver {}
+
 class MockRoute extends Mock implements Route<dynamic> {}
+
 class MockPageRoute extends Mock implements PageRoute<dynamic> {}
+
 class MockHttpClientRequest extends Mock implements HttpClientRequest {}
+
 class MockHttpClientResponse extends Mock implements HttpClientResponse {}
+
 class MockBaseResponse extends Mock implements BaseResponse {}
+
 class MockBaseRequest extends Mock implements BaseRequest {}
+
 class MockStackTrace extends Mock implements StackTrace {}
+
 class MockHttpClient extends Mock implements HttpClient {}
 
 T as<T>(dynamic it) => it is T ? it : null;
 
 class SimpleHttpOverrides extends HttpOverrides {
   SimpleHttpOverrides(this.client);
+
   final HttpClient client;
 
   @override

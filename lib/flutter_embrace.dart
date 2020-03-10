@@ -19,22 +19,76 @@ class Embrace {
 
   static Future<bool> get isStarted async => await _channel.invokeMethod('isStarted');
   static Future<void> start({bool enableIntegrationTesting}) async => await _channel.invokeMethod('start', enableIntegrationTesting);
+  static Future<void> endSession([bool clearUserInfo]) async => await _channel.invokeMethod('endSession', clearUserInfo);
+  static Future<String> get getDeviceId async => await _channel.invokeMethod('getDeviceId');
+
+
+  // user identifier management
   static Future<void> setUserIdentifier(String id) async => await _channel.invokeMethod('setUserIdentifier', id);
+  static Future<void> clearUserIdentifier() async => await _channel.invokeMethod('clearUserIdentifier');
   static Future<void> setUsername(String name) async => await _channel.invokeMethod('setUsername', name);
+  static Future<void> clearUsername() async => await _channel.invokeMethod('clearUsername');
   static Future<void> setUserEmail(String email) async => await _channel.invokeMethod('setUserEmail', email);
-  static Future<void> logInfo(String message) async => await _channel.invokeMethod('logInfo', message);
-  static Future<void> logWarning(String message) async => await _channel.invokeMethod('logWarning', message);
-  static Future<void> logError(String message) async => await _channel.invokeMethod('logError', message);
-  static Future<void> logBreadcrumb(String message) async => await _channel.invokeMethod('logBreadcrumb', message);
+  static Future<void> clearUserEmail() async => await _channel.invokeMethod('clearUserEmail');
   static Future<void> setUserAsPayer() async => await _channel.invokeMethod('setUserAsPayer');
   static Future<void> clearUserAsPayer() async => await _channel.invokeMethod('clearUserAsPayer');
-  static Future<void> clearAllUserPersonas() async => await _channel.invokeMethod('clearAllUserPersonas');
   static Future<void> setUserPersona(String value) async => await _channel.invokeMethod('setUserPersona', value);
   static Future<void> clearUserPersona(String value) async => await _channel.invokeMethod('clearUserPersona', value);
-  static Future<void> endAppStartup() async => await _channel.invokeMethod('endAppStartup');
+  static Future<void> clearAllUserPersonas() async => await _channel.invokeMethod('clearAllUserPersonas');
+
+  // events
+  static Future<void> startEvent(String name, {String identifier, bool allowScreenshot = false, Map<String,String> properties}) async =>
+      await _channel.invokeMethod(
+          'startEvent',
+          {
+            "name": name,
+            "identifier": identifier,
+            "allowScreenshot": allowScreenshot,
+            "properties": properties,
+          });
+
+  static Future<void> endEvent(String name, {String identifier, Map<String,String> properties}) async =>
+      await _channel.invokeMethod(
+          'endEvent',
+          {
+            "name": name,
+            "identifier": identifier,
+            "properties": properties,
+          });
   static Future<void> startAppStartup() async => await _channel.invokeMethod('startAppStartup');
-  static Future<void> endSession() async => await _channel.invokeMethod('endSession');
-  static Future<void> clearUserIdentifier() async => await _channel.invokeMethod('clearUserIdentifier');
+  static Future<void> endAppStartup() async => await _channel.invokeMethod('endAppStartup');
+
+  // logs
+  static Future<void> logInfo(String message, {Map<String,String> properties}) async =>
+      await _channel.invokeMethod(
+          'logInfo',
+          {
+            "message": message,
+            "properties": properties,
+          }
+      );
+
+  static Future<void> logWarning(String message, {Map<String,String> properties}) async =>
+      await _channel.invokeMethod(
+          'logWarning',
+          {
+            "message": message,
+            "properties": properties,
+          }
+      );
+
+  static Future<void> logError(String message, {bool allowScreenshot = false, Map<String,String> properties}) async =>
+      await _channel.invokeMethod(
+          'logError',
+          {
+            "message": message,
+            "allowScreenshot": allowScreenshot,
+            "properties": properties,
+          }
+      );
+
+  static Future<void> logBreadcrumb(String message) async => await _channel.invokeMethod('logBreadcrumb', message);
+
   static Future<void> logNetworkIoRequest(HttpClientRequest request, {
     DateTime startTime,
     DateTime endTime,
@@ -119,13 +173,14 @@ class Embrace {
   static Future<void> stop() async => await _channel.invokeMethod('stop');
 
   static Future<void> crashFlutter(FlutterErrorDetails details) async {
-    print('Flutter error caught by Embrace plugin:');
-
-    _crash(details.exceptionAsString(), details.stack,
+    _crash(
+        details.exceptionAsString(),
+        details.stack,
         context: details.context,
         information: details.informationCollector == null
             ? null
-            : details.informationCollector());
+            : details.informationCollector()
+    );
   }
 
   /// Submits a report of a non-fatal error.
@@ -133,14 +188,10 @@ class Embrace {
   /// For errors generated by the Flutter framework, use [crash] instead.
   static Future<void> crashError(Error error,
       {dynamic context}) async {
-    print('Error caught by Embrace plugin:');
-
     _crash(error, error.stackTrace, context: context);
   }
   static Future<void> crash(dynamic exception, StackTrace stack,
       {dynamic context}) async {
-    print('Error caught by Embrace plugin:');
-
     _crash(exception, stack, context: context);
   }
 
@@ -176,13 +227,7 @@ class Embrace {
       // that Flutter developers are used to seeing.
       if (stack != null) print('\n$stack');
     } else {
-      // The stack trace can be null. To avoid the following exception:
-      // Invalid argument(s): Cannot create a Trace from null.
-      // To avoid that exception, we can check for null and provide an empty stack trace.
-      stack ??= StackTrace.fromString('');
-
-      final List<Map<String, String>> stackTraceElements =
-      StackTraces.stackTraceElements(stack);
+      List<String> stackTraceElements = stack != null ? stack.toString().trimRight().split('\n') : [];
 
       // The context is a string that "should be in a form that will make sense in
       // English when following the word 'thrown'" according to the documentation for
@@ -190,7 +235,7 @@ class Embrace {
       // as the "reason", which is forced by iOS, with the "thrown" prefix added.
       final String result = await _channel.invokeMethod<String>('crash', <String, dynamic>{
         'exception': "${exception.toString()}",
-        'context': "$context",
+        'context': context != null ? "$context" : null,
         'information': _information,
         'stackTraceElements': stackTraceElements,
       });
